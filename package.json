@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js", // Add this line
- 
+    "start": "node server.js" // Removed the trailing comma here
   },
   "keywords": [],
   "author": "",
