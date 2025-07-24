@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify Web App Player</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --spotify-green: #1db954;
+        --spotify-dark: #121212;
+        --spotify-dark-alt: #181818;
+        --spotify-light-grey: #b3b3b3;
+        --spotify-medium-grey: #282828;
+        --spotify-border-grey: #404040;
+        --text-color: #ffffff;
+        --error-red: #d32f2f;
+      }
+
+      body {
+        font-family: "Inter", sans-serif; /* Using Inter as a similar aesthetic to Gotham */
+        margin: 0;
+        background-color: var(--spotify-dark);
+        color: var(--text-color);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start; /* Align content to the top */
+        min-height: 100vh;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 900px; /* Constrain width for a better layout */
+        background-color: var(--spotify-dark-alt);
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: var(--text-color); /* Headings white by default */
+        font-weight: 700;
+        margin-bottom: 15px;
+      }
+
+      p {
+        color: var(--spotify-light-grey);
+        margin-bottom: 10px;
+      }
+
+      button {
+        background-color: var(--spotify-green);
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 500px; /* Pill shape for buttons */
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin: 5px;
+        transition: background-color 0.2s ease-in-out,
+          transform 0.1s ease-in-out;
+      }
+
+      button:hover:not(:disabled) {
+        background-color: #1ed760; /* Slightly lighter green on hover */
+        transform: scale(1.02);
+      }
+
+      button:disabled {
+        background-color: #535353;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      input[type="text"] {
+        padding: 12px 15px;
+        border-radius: 4px;
+        border: 1px solid var(--spotify-border-grey);
+        background-color: var(--spotify-medium-grey);
+        color: var(--text-color);
+        margin: 5px;
+        width: calc(100% - 150px); /* Adjust width */
+        max-width: 300px; /* Limit max width */
+        box-sizing: border-box;
+        font-size: 16px;
+      }
+
+      input[type="text"]::placeholder {
+        color: var(--spotify-light-grey);
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--spotify-green);
+        box-shadow: 0 0 0 1px var(--spotify-green);
+      }
+
+      .section-box {
+        margin-top: 30px;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: var(--spotify-medium-grey);
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+      }
+
+      #currentPlayback {
+        border: 1px solid var(--spotify-border-grey);
+        background-color: #202020; /* Slightly different dark for emphasis */
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      #trackName {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 5px;
+      }
+
+      #artistName,
+      #deviceName {
+        font-size: 16px;
+        color: var(--spotify-light-grey);
+        margin-bottom: 5px;
+      }
+
+      .playback-controls-group button {
+        margin: 0 8px;
+        padding: 10px 18px; /* Slightly smaller for control buttons */
+        font-size: 15px;
+      }
+
+      #playerStatus {
+        color: var(--spotify-light-grey);
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+
+      .list-header {
+        color: var(--text-color);
+        margin-bottom: 15px;
+        font-weight: 700;
+        font-size: 18px;
+      }
+
+      .device-item,
+      .track-item {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--spotify-border-grey);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .device-item:last-child,
+      .track-item:last-child {
+        border-bottom: none;
+      }
+
+      .device-item p,
+      .track-item p {
+        margin: 0;
+        flex-grow: 1;
+      }
+
+      .track-item p strong {
+        color: var(--spotify-green); /* Track name highlight */
+      }
+      .track-item p span {
+        color: var(--spotify-light-grey);
+        font-size: 0.9em;
+      }
+
+      .track-item button,
+      .device-item button {
+        margin-left: 10px;
+        padding: 8px 15px;
+        font-size: 13px;
+        text-transform: none; /* Don't uppercase these buttons */
+      }
+
+      /* Logout button specific styling */
+      .logout-form button {
+        background-color: var(--error-red);
+        margin-top: 30px;
+        float: right; /* Position to the right */
+      }
+
+      .logout-form button:hover {
+        background-color: #c02828;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Spotify Web App Player</h1>
+      <p>You are logged in!</p>
+
+      <div id="currentPlayback" class="section-box">
+        <h3>Now Playing:</h3>
+        <p id="trackName">Nothing playing...</p>
+        <p id="artistName"></p>
+        <p id="deviceName"></p>
+      </div>
+
+      <div class="section-box">
+        <h2>Playback Controls (On this browser)</h2>
+        <p id="playerStatus">Initializing Spotify Player...</p>
+        <button id="initializePlayerButton" style="display: none">
+          Click to Initialize Player
+        </button>
+        <div class="playback-controls-group">
+          <button id="previous" disabled>Previous</button>
+          <button id="pause" disabled>Pause</button>
+          <button id="play" disabled>Play</button>
+          <button id="next" disabled>Next</button>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <h2>Control Other Devices / Transfer Playback</h2>
+        <button id="getDevices">Refresh All Devices</button>
+        <div id="devicesList">
+          <p class="list-header">Available Devices (including this player):</p>
+        </div>
+        <br />
+      </div>
+
+      <div class="section-box">
+        <h2>Search Music</h2>
+        <input type="text" id="searchQuery" placeholder="Search track/artist" />
+        <button id="searchButton">Search</button>
+        <div id="searchResults">
+          <p class="list-header">Search Results:</p>
+        </div>
+      </div>
+
+      <form action="/logout" method="post" class="logout-form">
+        <button type="submit">Logout</button>
+      </form>
+    </div>
+
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+    <script>
+      let spotifyPlayer = null;
+      let deviceId = null; // This will be the ID of our browser player
+
+      // Helper to fetch data from your server API endpoints
+      async function callApi(endpoint, method = "GET", body = null) {
+        const options = { method };
+        if (body) {
+          options.headers = { "Content-Type": "application/json" };
+          options.body = JSON.stringify(body);
+        }
+        const response = await fetch(endpoint, options);
+        if (!response.ok) {
+          console.error(
+            `API call failed for ${endpoint}:`,
+            response.status,
+            await response.json()
+          );
+          alert(`Error: ${response.statusText || "API call failed"}`);
+          throw new Error("API call failed");
+        }
+        return response.json();
+      }
+
+      // --- Spotify Web Playback SDK Initialization ---
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        document.getElementById("playerStatus").textContent =
+          "Web Playback SDK Ready. Fetching Access Token...";
+        initializeSpotifyPlayer();
+      };
+
+      async function initializeSpotifyPlayer() {
+        try {
+          const tokenData = await callApi("/get_access_token");
+          const accessToken = tokenData.access_token;
+
+          if (!accessToken) {
+            document.getElementById("playerStatus").textContent =
+              "Failed to get access token. Please re-login.";
+            alert(
+              "Could not get access token for Spotify Player. Please log in again."
+            );
+            return;
+          }
+
+          spotifyPlayer = new Spotify.Player({
+            name: "My Web App Player", // Name of your player device
+            getOAuthToken: (cb) => {
+              cb(accessToken);
+            },
+            volume: 0.5,
+          });
+
+          // Error handling
+          spotifyPlayer.addListener("initialization_error", ({ message }) => {
+            console.error("Failed to initialize:", message);
+            document.getElementById(
+              "playerStatus"
+            ).textContent = `Initialization Error: ${message}`;
+            alert(
+              `Initialization Error: ${message}. Make sure you have Spotify Premium.`
+            );
+          });
+          spotifyPlayer.addListener("authentication_error", ({ message }) => {
+            console.error("Authentication error:", message);
+            document.getElementById(
+              "playerStatus"
+            ).textContent = `Auth Error: ${message}`;
+            alert(
+              `Authentication Error: ${message}. Session might have expired.`
+            );
+            // Optionally, redirect to login: window.location.href = '/login';
+          });
+          spotifyPlayer.addListener("account_error", ({ message }) => {
+            console.error("Account error:", message);
+            document.getElementById(
+              "playerStatus"
+            ).textContent = `Account Error: ${message}`;
+            alert(
+              `Account Error: ${message}. Make sure you have Spotify Premium.`
+            );
+          });
+          spotifyPlayer.addListener("playback_error", ({ message }) => {
+            console.error("Playback error:", message);
+            document.getElementById(
+              "playerStatus"
+            ).textContent = `Playback Error: ${message}`;
+          });
+
+          // Playback status updates
+          spotifyPlayer.addListener("player_state_changed", (state) => {
+            console.log("Player State Changed:", state);
+            if (!state) {
+              document.getElementById("trackName").textContent =
+                "Nothing playing...";
+              document.getElementById("artistName").textContent = "";
+              document.getElementById("deviceName").textContent = "";
+              return;
+            }
+            const {
+              track_window: { current_track },
+            } = state;
+            document.getElementById("trackName").textContent = current_track
+              ? current_track.name
+              : "No track";
+            document.getElementById("artistName").textContent = current_track
+              ? current_track.artists.map((artist) => artist.name).join(", ")
+              : "";
+            document.getElementById(
+              "deviceName"
+            ).textContent = `Playing on: ${spotifyPlayer._options.name}`;
+
+            // Update button states
+            document.getElementById("play").disabled = !state.paused;
+            document.getElementById("pause").disabled = state.paused;
+            document.getElementById("next").disabled = false;
+            document.getElementById("previous").disabled = false;
+          });
+
+          // Ready
+          spotifyPlayer.addListener("ready", ({ device_id: id }) => {
+            deviceId = id;
+            document.getElementById(
+              "playerStatus"
+            ).textContent = `Spotify Player Ready! Device ID: ${deviceId}`;
+            console.log("Ready with Device ID", deviceId);
+            // Enable buttons
+            document.getElementById("play").disabled = false;
+            document.getElementById("pause").disabled = false;
+            document.getElementById("next").disabled = false;
+            document.getElementById("previous").disabled = false;
+
+            // You might want to transfer playback to this device automatically
+            // This often requires a user gesture.
+            // callApi('/api/play', 'PUT', { device_ids: [deviceId], play: true });
+          });
+
+          // Not Ready
+          spotifyPlayer.addListener("not_ready", ({ device_id: id }) => {
+            console.log("Device ID has gone offline", id);
+            document.getElementById(
+              "playerStatus"
+            ).textContent = `Spotify Player Offline. Device ID: ${id}`;
+            deviceId = null;
+            document.getElementById("play").disabled = true;
+            document.getElementById("pause").disabled = true;
+            document.getElementById("next").disabled = true;
+            document.getElementById("previous").disabled = true;
+          });
+
+          // Connect to the player!
+          document.getElementById("initializePlayerButton").style.display =
+            "block";
+          document.getElementById("initializePlayerButton").addEventListener(
+            "click",
+            () => {
+              spotifyPlayer.connect().then((success) => {
+                if (success) {
+                  console.log(
+                    "The Web Playback SDK successfully connected to Spotify!"
+                  );
+                  document.getElementById(
+                    "initializePlayerButton"
+                  ).style.display = "none";
+                }
+              });
+            },
+            { once: true }
+          ); // Only allow one click to connect
+        } catch (error) {
+          console.error("Error in initializeSpotifyPlayer:", error);
+          document.getElementById("playerStatus").textContent =
+            "Error initializing player. Check console.";
+        }
+      }
+
+      // --- Playback Controls (now using SDK for this device) ---
+      document.getElementById("pause").addEventListener("click", () => {
+        if (spotifyPlayer) spotifyPlayer.pause();
+      });
+      document.getElementById("play").addEventListener("click", () => {
+        if (spotifyPlayer) spotifyPlayer.resume(); // Use resume for SDK player
+      });
+      document.getElementById("next").addEventListener("click", () => {
+        if (spotifyPlayer) spotifyPlayer.nextTrack();
+      });
+      document.getElementById("previous").addEventListener("click", () => {
+        if (spotifyPlayer) spotifyPlayer.previousTrack();
+      });
+
+      // --- Search and Play (modified to use SDK device_id) ---
+      document
+        .getElementById("searchButton")
+        .addEventListener("click", async () => {
+          const query = document.getElementById("searchQuery").value;
+          if (!query) return;
+
+          try {
+            const data = await callApi(
+              `/api/search?q=${encodeURIComponent(query)}&type=track`
+            );
+            const searchResults = document.getElementById("searchResults");
+            searchResults.innerHTML =
+              '<p class="list-header">Search Results:</p>'; // Keep the header
+            if (data && data.tracks && data.tracks.items.length > 0) {
+              data.tracks.items.forEach((track) => {
+                const div = document.createElement("div");
+                div.className = "track-item";
+                div.innerHTML = `
+                            <div>
+                                <p><strong>${track.name}</strong></p>
+                                <p><span>${track.artists
+                                  .map((a) => a.name)
+                                  .join(", ")}</span></p>
+                            </div>
+                            <div>
+                                <button data-track-uri="${
+                                  track.uri
+                                }" class="play-track-btn">Play on Web Player</button>
+                                <button data-track-uri="${
+                                  track.uri
+                                }" class="play-other-btn">Play on Other Device</button>
+                            </div>
+                        `;
+                searchResults.appendChild(div);
+              });
+
+              // Play on Web Player (SDK)
+              document.querySelectorAll(".play-track-btn").forEach((button) => {
+                button.addEventListener("click", async (event) => {
+                  const trackUri = event.target.dataset.trackUri;
+                  if (spotifyPlayer && deviceId) {
+                    // Transfer playback to our browser device and then play the URI
+                    try {
+                      await callApi("/api/play", "PUT", {
+                        device_id: deviceId,
+                        uris: [trackUri],
+                      });
+                      alert(
+                        `Playing "${
+                          event.target
+                            .closest(".track-item")
+                            .querySelector("strong").textContent
+                        }" on this browser!`
+                      );
+                    } catch (error) {
+                      console.error("Error playing via SDK device:", error);
+                      alert("Failed to play on web app player. See console.");
+                    }
+                  } else {
+                    alert(
+                      'Web player not ready or not connected. Click "Click to Initialize Player" first.'
+                    );
+                  }
+                });
+              });
+
+              // Play on Other Device (existing functionality)
+              document.querySelectorAll(".play-other-btn").forEach((button) => {
+                button.addEventListener("click", async (event) => {
+                  const trackUri = event.target.dataset.trackUri;
+                  try {
+                    const devicesData = await callApi("/api/devices");
+                    if (
+                      devicesData &&
+                      devicesData.devices &&
+                      devicesData.devices.length > 0
+                    ) {
+                      // Filter out our own web app device if it's in the list
+                      const otherDevices = devicesData.devices.filter(
+                        (d) => d.id !== deviceId
+                      );
+                      const activeOtherDevice =
+                        otherDevices.find((d) => d.is_active) ||
+                        otherDevices[0]; // Pick active or first available other device
+
+                      if (activeOtherDevice) {
+                        await callApi("/api/play", "PUT", {
+                          device_id: activeOtherDevice.id,
+                          uris: [trackUri],
+                        });
+                        alert(
+                          `Playing "${
+                            event.target
+                              .closest(".track-item")
+                              .querySelector("strong").textContent
+                          }" on ${activeOtherDevice.name}`
+                        );
+                      } else {
+                        alert(
+                          "No other Spotify devices found. Please open Spotify on a different device."
+                        );
+                      }
+                    } else {
+                      alert(
+                        "No Spotify devices found (other than this web app, if connected)."
+                      );
+                    }
+                  } catch (error) {
+                    console.error(
+                      "Error playing track on other device:",
+                      error
+                    );
+                    alert("Failed to play on other device. See console.");
+                  }
+                });
+              });
+            } else {
+              searchResults.textContent = "No results found.";
+            }
+          } catch (error) {
+            console.error("Error searching:", error);
+          }
+        });
+
+      // --- Get All Devices (now includes our web app player) ---
+      document
+        .getElementById("getDevices")
+        .addEventListener("click", async () => {
+          try {
+            const data = await callApi("/api/devices");
+            const devicesList = document.getElementById("devicesList");
+            devicesList.innerHTML =
+              '<p class="list-header">Available Devices (including this player):</p>'; // Keep the header
+            if (data && data.devices && data.devices.length > 0) {
+              data.devices.forEach((device) => {
+                const div = document.createElement("div");
+                div.className = "device-item";
+                let deviceName = device.name;
+                if (device.id === deviceId) {
+                  deviceName += " (This Web App)"; // Label our own player
+                }
+                div.innerHTML = `
+                            <p><strong>${deviceName}</strong> (${
+                  device.type
+                }) ${device.is_active ? "(Active)" : ""}</p>
+                            <button data-device-id="${
+                              device.id
+                            }" class="transfer-btn">Transfer Playback Here</button>
+                        `;
+                devicesList.appendChild(div);
+              });
+
+              document.querySelectorAll(".transfer-btn").forEach((button) => {
+                button.addEventListener("click", async (event) => {
+                  const targetDeviceId = event.target.dataset.deviceId;
+                  try {
+                    // Just calling /api/play without uris will transfer playback
+                    await callApi("/api/play", "PUT", {
+                      device_ids: [targetDeviceId],
+                      play: true,
+                    });
+                    alert(
+                      `Playback transferred to ${
+                        event.target
+                          .closest(".device-item")
+                          .querySelector("strong").textContent
+                      }`
+                    );
+                  } catch (error) {
+                    console.error("Error transferring playback:", error);
+                    alert("Failed to transfer playback.");
+                  }
+                });
+              });
+            } else {
+              devicesList.textContent =
+                "No active devices found. Open Spotify on your phone/desktop.";
+            }
+          } catch (error) {
+            console.error("Error getting devices:", error);
+            alert(
+              "Failed to get devices. Please ensure Spotify is open on a device and you are logged in."
+            );
+          }
+        });
+
+      // Initial call to get current playback state when dashboard loads (optional)
+      // This will update 'Now Playing' area even if player isn't active on browser
+      async function getCurrentlyPlaying() {
+        try {
+          const response = await fetch("/api/currently_playing"); // Assuming you have this endpoint on server
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.item) {
+              document.getElementById("trackName").textContent = data.item.name;
+              document.getElementById("artistName").textContent =
+                data.item.artists.map((a) => a.name).join(", ");
+              document.getElementById(
+                "deviceName"
+              ).textContent = `Playing on: ${data.device.name}`;
+            } else {
+              document.getElementById("trackName").textContent =
+                "Nothing playing...";
+              document.getElementById("artistName").textContent = "";
+              document.getElementById("deviceName").textContent = "";
+            }
+          }
+        } catch (error) {
+          console.warn(
+            "Could not get current playback. API might not be implemented or no playback active.",
+            error
+          );
+        }
+      }
+      // getCurrentlyPlaying(); // Uncomment if you add a /api/currently_playing endpoint to server.js
+    </script>
+  </body>
+</html>
