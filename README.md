@@ -43,7 +43,7 @@ PORT=3000
 USE_NGROK="true" # Set to "true" for local ngrok development
 SESSION_SECRET='YOUR_VERY_LONG_RANDOM_STRING_HERE_FOR_SESSION_SECURITY'
 
-
+```
 
 ### `.env` File Documentation
 
